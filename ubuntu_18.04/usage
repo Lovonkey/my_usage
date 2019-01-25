@@ -1,0 +1,69 @@
+1.去掉桌面垃圾桶图标：
+  1.sudo apt install gnome-tweaks
+  2.打开优化程序，选择桌面进行选择
+
+2.更新ubuntu默认的软件源：
+  1.备份/etc/apt/sources.list，cp /etc/apt/sources.list /etc/apt/sources.list-old
+  2.将/etc/apt/sources.list内容替换为下列内容:
+      # 默认注释了源码镜像以提高 apt update 速度，如有需要可自行取消注释
+      deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic main restricted universe multiverse
+      # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic main restricted universe multiverse
+      deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-updates main restricted universe multiverse
+      # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-updates main restricted universe multiverse  
+      deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-backports main restricted universe multiverse
+      # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-backports main restricted universe multiverse
+      deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-security main restricted universe multiverse
+      # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-security main restricted universe multiverse
+
+      # 预发布软件源，不建议启用
+      # deb https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-proposed main restricted universe multiverse
+      # deb-src https://mirrors.tuna.tsinghua.edu.cn/ubuntu/ bionic-proposed main restricted universe multiverse
+
+      参考：https://mirror.tuna.tsinghua.edu.cn/help/ubuntu/
+
+3.repo下载：
+  mkdir ~/bin
+  curl https://storage.googleapis.com/git-repo-downloads/repo
+  chmod a+x ~/bin/repo
+  export PATH=${PATH}:~/bin
+  替换~/bin/repo下REPO_URL='https://mirrors.tuna.tsinghua.edu.cn/git/git-repo/'
+
+4.安卓源码编译：
+  1.安装如下软件：
+    sudo apt-get install uuid uuid-dev
+    sudo apt-get install zlib1g-dev liblz-dev
+    sudo apt-get install liblzo2-2 liblzo2-dev
+    sudo apt-get install lzop
+    sudo apt-get install git-core curl
+    sudo apt-get install u-boot-tools
+    sudo apt-get install mtd-utils
+    sudo apt-get install android-tools-fsutils
+    sudo apt-get install openjdk-8-jdk
+    sudo apt-get install device-tree-compiler
+    sudo apt-get install gdisk
+  
+  2.下载代码(imx6):
+    1.repo init -u https://source.codeaurora.org/external/imx/imx-manifest.git -b imx-android-oreo -m imx-o8.0.0_1.0.0_ga.xml
+    2.替换源：
+      cd xxx/.repo/manifests && sed -i "s#https://android.googlesource.com/#https://aosp.tuna.tsinghua.edu.cn/#g" `grep "https://android.googlesource.com/" -rl .`
+    3.repo sync
+    4.拷贝imx6专有的vendor代码.
+
+  3.同时还进行了下列安装：
+    sudo apt-get install -y libx11-dev:i386 libreadline6-dev:i386 libgl1-mesa-dev g++-multilib
+    sudo apt-get install -y git flex bison gperf build-essential libncurses5-dev:i386
+    sudo apt-get install -y tofrodos python-markdown libxml2-utils xsltproc zlib1g-dev:i386
+    sudo apt-get install -y dpkg-dev libsdl1.2-dev
+    sudo apt-get install -y git-core gnupg flex bison gperf build-essential  
+    sudo apt-get install -y zip curl zlib1g-dev gcc-multilib g++-multilib
+    sudo apt-get install -y libc6-dev-i386
+    sudo apt-get install -y lib32ncurses5-dev x11proto-core-dev libx11-dev
+    sudo apt-get install -y libgl1-mesa-dev libxml2-utils xsltproc unzip m4
+    sudo apt-get install -y lib32z-dev ccache cmake
+ 
+
+
+
+
+
+
