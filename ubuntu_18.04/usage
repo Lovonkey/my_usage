@@ -60,8 +60,18 @@
     sudo apt-get install -y lib32ncurses5-dev x11proto-core-dev libx11-dev
     sudo apt-get install -y libgl1-mesa-dev libxml2-utils xsltproc unzip m4
     sudo apt-get install -y lib32z-dev ccache cmake
+<<<<<<< HEAD
+  
+  4.遇到如下错误：
+    flex-2.5.39: loadlocale.c:130:_nl_intern_locale_data: ?? 'cnt < (sizeof (_nl_value_type_LC_TIME) / sizeof (_nl_value_type_LC_TIME[0]))' ???
+    执行：echo "export LC_ALL=C" >> ~/.bashrc && source ~/.bashrc
+ 
+5.终端工具替换：
+  sudo apt-get install terminator
+=======
  
 
+>>>>>>> 7ed9172e44c072f36f0b3ba707f137877acfaa2a
 
 
 
