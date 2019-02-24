@@ -1,0 +1,318 @@
+From a1fa4d53e3231b79540941a0558c33a310a9dd3d Mon Sep 17 00:00:00 2001
+From: lovonkey <52697285@qq.com>
+Date: Sun, 24 Feb 2019 21:44:42 +0800
+Subject: [PATCH] Fix: [uboot] support nand boot
+
+---
+ board/freescale/mx6sabresd/mx6dlsabresd.cfg |   4 +-
+ board/freescale/mx6sabresd/mx6sabresd.c     | 142 +++++++-------------
+ configs/mx6dlsabresdandroid_defconfig       |   3 +-
+ drivers/mmc/Kconfig                         |   4 +-
+ include/configs/mx6sabreandroid_common.h    |   2 +-
+ make.sh                                     |  20 +++
+ 6 files changed, 78 insertions(+), 97 deletions(-)
+ mode change 100644 => 100755 board/freescale/mx6sabresd/mx6dlsabresd.cfg
+ mode change 100644 => 100755 board/freescale/mx6sabresd/mx6sabresd.c
+ create mode 100755 make.sh
+
+diff --git a/board/freescale/mx6sabresd/mx6dlsabresd.cfg b/board/freescale/mx6sabresd/mx6dlsabresd.cfg
+old mode 100644
+new mode 100755
+index 6dc93ea8ea..9230bb7bf4
+--- a/board/freescale/mx6sabresd/mx6dlsabresd.cfg
++++ b/board/freescale/mx6sabresd/mx6dlsabresd.cfg
+@@ -132,9 +132,9 @@ DATA 4 0x020c4068 0x00C03F3F
+ DATA 4 0x020c406c 0x0030FC03
+ DATA 4 0x020c4070 0x0FFFC000
+ DATA 4 0x020c4074 0x3FF00000
+-DATA 4 0x020c4078 0x00FFF300
++DATA 4 0x020c4078 0xFFFFF300
+ DATA 4 0x020c407c 0x0F0000C3
+-DATA 4 0x020c4080 0x000003FF
++DATA 4 0x020c4080 0x00000FFF
+ 
+ /* enable AXI cache for VDOA/VPU/IPU */
+ DATA 4 0x020e0010 0xF00000CF
+diff --git a/board/freescale/mx6sabresd/mx6sabresd.c b/board/freescale/mx6sabresd/mx6sabresd.c
+old mode 100644
+new mode 100755
+index 9f60943b6d..da23417056
+--- a/board/freescale/mx6sabresd/mx6sabresd.c
++++ b/board/freescale/mx6sabresd/mx6sabresd.c
+@@ -134,11 +134,6 @@ static iomux_v3_cfg_t const usdhc2_pads[] = {
+ 	MX6_PAD_SD2_DAT1__SD2_DATA1	| MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 	MX6_PAD_SD2_DAT2__SD2_DATA2	| MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 	MX6_PAD_SD2_DAT3__SD2_DATA3	| MUX_PAD_CTRL(USDHC_PAD_CTRL),
+-	MX6_PAD_NANDF_D4__SD2_DATA4	| MUX_PAD_CTRL(USDHC_PAD_CTRL),
+-	MX6_PAD_NANDF_D5__SD2_DATA5	| MUX_PAD_CTRL(USDHC_PAD_CTRL),
+-	MX6_PAD_NANDF_D6__SD2_DATA6	| MUX_PAD_CTRL(USDHC_PAD_CTRL),
+-	MX6_PAD_NANDF_D7__SD2_DATA7	| MUX_PAD_CTRL(USDHC_PAD_CTRL),
+-	MX6_PAD_NANDF_D2__GPIO2_IO02	| MUX_PAD_CTRL(NO_PAD_CTRL), /* CD */
+ };
+ 
+ static iomux_v3_cfg_t const usdhc3_pads[] = {
+@@ -152,7 +147,6 @@ static iomux_v3_cfg_t const usdhc3_pads[] = {
+ 	MX6_PAD_SD3_DAT5__SD3_DATA5 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 	MX6_PAD_SD3_DAT6__SD3_DATA6 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+ 	MX6_PAD_SD3_DAT7__SD3_DATA7 | MUX_PAD_CTRL(USDHC_PAD_CTRL),
+-	MX6_PAD_NANDF_D0__GPIO2_IO00    | MUX_PAD_CTRL(NO_PAD_CTRL), /* CD */
+ };
+ 
+ static iomux_v3_cfg_t const usdhc4_pads[] = {
+@@ -372,89 +366,7 @@ int board_mmc_getcd(struct mmc *mmc)
+ 
+ int board_mmc_init(bd_t *bis)
+ {
+-#ifndef CONFIG_SPL_BUILD
+-	int ret;
+-	int i;
+-
+-	/*
+-	 * According to the board_mmc_init() the following map is done:
+-	 * (U-Boot device node)    (Physical Port)
+-	 * mmc0                    SD2
+-	 * mmc1                    SD3
+-	 * mmc2                    eMMC
+-	 */
+-	for (i = 0; i < CONFIG_SYS_FSL_USDHC_NUM; i++) {
+-		switch (i) {
+-		case 0:
+-			imx_iomux_v3_setup_multiple_pads(
+-				usdhc2_pads, ARRAY_SIZE(usdhc2_pads));
+-			gpio_request(USDHC2_CD_GPIO, "USDHC2 CD");
+-			gpio_direction_input(USDHC2_CD_GPIO);
+-			usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
+-			break;
+-		case 1:
+-			imx_iomux_v3_setup_multiple_pads(
+-				usdhc3_pads, ARRAY_SIZE(usdhc3_pads));
+-			gpio_request(USDHC3_CD_GPIO, "USDHC3 CD");
+-			gpio_direction_input(USDHC3_CD_GPIO);
+-			usdhc_cfg[1].sdhc_clk = mxc_get_clock(MXC_ESDHC3_CLK);
+-			break;
+-		case 2:
+-			imx_iomux_v3_setup_multiple_pads(
+-				usdhc4_pads, ARRAY_SIZE(usdhc4_pads));
+-			usdhc_cfg[2].sdhc_clk = mxc_get_clock(MXC_ESDHC4_CLK);
+-			break;
+-		default:
+-			printf("Warning: you configured more USDHC controllers"
+-			       "(%d) then supported by the board (%d)\n",
+-			       i + 1, CONFIG_SYS_FSL_USDHC_NUM);
+-			return -EINVAL;
+-		}
+-
+-		ret = fsl_esdhc_initialize(bis, &usdhc_cfg[i]);
+-		if (ret)
+-			return ret;
+-	}
+-
+ 	return 0;
+-#else
+-	struct src *psrc = (struct src *)SRC_BASE_ADDR;
+-	unsigned reg = readl(&psrc->sbmr1) >> 11;
+-	/*
+-	 * Upon reading BOOT_CFG register the following map is done:
+-	 * Bit 11 and 12 of BOOT_CFG register can determine the current
+-	 * mmc port
+-	 * 0x1                  SD1
+-	 * 0x2                  SD2
+-	 * 0x3                  SD4
+-	 */
+-
+-	switch (reg & 0x3) {
+-	case 0x1:
+-		imx_iomux_v3_setup_multiple_pads(
+-			usdhc2_pads, ARRAY_SIZE(usdhc2_pads));
+-		usdhc_cfg[0].esdhc_base = USDHC2_BASE_ADDR;
+-		usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC2_CLK);
+-		gd->arch.sdhc_clk = usdhc_cfg[0].sdhc_clk;
+-		break;
+-	case 0x2:
+-		imx_iomux_v3_setup_multiple_pads(
+-			usdhc3_pads, ARRAY_SIZE(usdhc3_pads));
+-		usdhc_cfg[0].esdhc_base = USDHC3_BASE_ADDR;
+-		usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC3_CLK);
+-		gd->arch.sdhc_clk = usdhc_cfg[0].sdhc_clk;
+-		break;
+-	case 0x3:
+-		imx_iomux_v3_setup_multiple_pads(
+-			usdhc4_pads, ARRAY_SIZE(usdhc4_pads));
+-		usdhc_cfg[0].esdhc_base = USDHC4_BASE_ADDR;
+-		usdhc_cfg[0].sdhc_clk = mxc_get_clock(MXC_ESDHC4_CLK);
+-		gd->arch.sdhc_clk = usdhc_cfg[0].sdhc_clk;
+-		break;
+-	}
+-
+-	return fsl_esdhc_initialize(bis, &usdhc_cfg[0]);
+-#endif
+ }
+ #endif
+ 
+@@ -915,6 +827,50 @@ int board_early_init_f(void)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_NAND_MXS
++#define GPMI_PAD_CTRL0 (PAD_CTL_PKE | PAD_CTL_PUE | PAD_CTL_PUS_100K_UP)
++#define GPMI_PAD_CTRL1 (PAD_CTL_DSE_40ohm | PAD_CTL_SPEED_MED | \
++                        PAD_CTL_SRE_FAST)
++#define GPMI_PAD_CTRL2 (GPMI_PAD_CTRL0 | GPMI_PAD_CTRL1)
++
++static iomux_v3_cfg_t gpmi_pads[] = {
++	MX6_PAD_NANDF_CLE__NAND_CLE		| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NANDF_ALE__NAND_ALE		| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NANDF_WP_B__NAND_WP_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NANDF_RB0__NAND_READY_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL0),
++	MX6_PAD_NANDF_CS0__NAND_CE0_B	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_SD4_CMD__NAND_RE_B		| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_SD4_CLK__NAND_WE_B		| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NANDF_D0__NAND_DATA00	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NANDF_D1__NAND_DATA01	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NANDF_D2__NAND_DATA02	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NANDF_D3__NAND_DATA03	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NANDF_D4__NAND_DATA04	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NANDF_D5__NAND_DATA05	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NANDF_D6__NAND_DATA06	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_NANDF_D7__NAND_DATA07	| MUX_PAD_CTRL(GPMI_PAD_CTRL2),
++	MX6_PAD_SD4_DAT0__NAND_DQS		| MUX_PAD_CTRL(GPMI_PAD_CTRL1),
++};
++
++static void setup_gpmi_nand(void)
++{
++	struct mxc_ccm_reg *mxc_ccm = (struct mxc_ccm_reg *)CCM_BASE_ADDR;
++
++	printf("setup_gpmi_nand enter\n");
++
++	/* config gpmi nand iomux */
++	imx_iomux_v3_setup_multiple_pads(gpmi_pads, ARRAY_SIZE(gpmi_pads));
++
++	setup_gpmi_io_clk((MXC_CCM_CS2CDR_ENFC_CLK_PODF(0) |
++			MXC_CCM_CS2CDR_ENFC_CLK_PRED(3) |
++			MXC_CCM_CS2CDR_ENFC_CLK_SEL(3)));
++
++	/* enable apbh clock gating */
++	setbits_le32(&mxc_ccm->CCGR0, MXC_CCM_CCGR0_APBHDMA_MASK);
++}
++#endif
++
++
+ int board_init(void)
+ {
+ 	/* address of boot parameters */
+@@ -956,6 +912,10 @@ int board_init(void)
+ 	setup_fec();
+ #endif
+ 
++#ifdef CONFIG_NAND_MXS
++	setup_gpmi_nand();
++#endif
++
+ 	return 0;
+ }
+ 
+@@ -967,8 +927,10 @@ int power_init_board(void)
+ 	int ret;
+ 
+ 	pfuze = pfuze_common_init(I2C_PMIC);
+-	if (!pfuze)
+-		return -ENODEV;
++	if (!pfuze) {
++		printf("pfuze_common_init failed\n");
++		return 0;
++	}
+ 
+ 	if (is_mx6dqp())
+ 		ret = pfuze_mode_init(pfuze, APS_APS);
+diff --git a/configs/mx6dlsabresdandroid_defconfig b/configs/mx6dlsabresdandroid_defconfig
+index 9300aab374..e80aa3bb2a 100644
+--- a/configs/mx6dlsabresdandroid_defconfig
++++ b/configs/mx6dlsabresdandroid_defconfig
+@@ -4,6 +4,7 @@ CONFIG_TARGET_MX6SABRESD=y
+ CONFIG_VIDEO=y
+ CONFIG_SYS_EXTRA_OPTIONS="IMX_CONFIG=board/freescale/mx6sabresd/mx6dlsabresd.cfg,MX6DL,ANDROID_SUPPORT"
+ CONFIG_EFI_PARTITION=y
++CONFIG_NAND_BOOT=y
+ CONFIG_BOOTDELAY=3
+ # CONFIG_CONSOLE_MUX is not set
+ CONFIG_SYS_CONSOLE_IS_IN_ENV=y
+@@ -13,7 +14,6 @@ CONFIG_CMD_BOOTZ=y
+ # CONFIG_CMD_IMLS is not set
+ # CONFIG_CMD_FLASH is not set
+ CONFIG_CMD_MEMTEST=y
+-CONFIG_CMD_MMC=y
+ CONFIG_CMD_SF=y
+ CONFIG_CMD_I2C=y
+ CONFIG_CMD_USB=y
+@@ -37,7 +37,6 @@ CONFIG_OF_CONTROL=y
+ # CONFIG_BLK is not set
+ CONFIG_DM_GPIO=y
+ CONFIG_DM_I2C=y
+-CONFIG_DM_MMC=y
+ # CONFIG_DM_MMC_OPS is not set
+ CONFIG_PINCTRL=y
+ CONFIG_PINCTRL_IMX6=y
+diff --git a/drivers/mmc/Kconfig b/drivers/mmc/Kconfig
+index 01d1dbfb1b..7bbe33000e 100644
+--- a/drivers/mmc/Kconfig
++++ b/drivers/mmc/Kconfig
+@@ -2,7 +2,7 @@ menu "MMC Host controller Support"
+ 
+ config MMC
+ 	bool "MMC/SD/SDIO card support"
+-	default ARM || PPC || SANDBOX
++	default no
+ 	help
+ 	  This selects MultiMediaCard, Secure Digital and Secure
+ 	  Digital I/O support.
+@@ -12,7 +12,7 @@ config MMC
+ 
+ config GENERIC_MMC
+ 	bool "Generic MMC driver framework"
+-	default MMC
++	default no
+ 
+ config DM_MMC
+ 	bool "Enable MMC controllers using Driver Model"
+diff --git a/include/configs/mx6sabreandroid_common.h b/include/configs/mx6sabreandroid_common.h
+index 20a3b105f5..b01d4e9b51 100644
+--- a/include/configs/mx6sabreandroid_common.h
++++ b/include/configs/mx6sabreandroid_common.h
+@@ -20,7 +20,7 @@
+ #endif
+ 
+ #if defined(CONFIG_NAND_BOOT)
+-#define ANDROID_FASTBOOT_NAND_PARTS "16m@64m(boot) 16m@80m(recovery) 1m@96m(misc) 810m@97m(android_root)ubifs"
++#define ANDROID_FASTBOOT_NAND_PARTS "16m@48m(boot) 16m@64m(recovery) 1m@80m(misc) 810m@81m(android_root)ubifs"
+ #endif
+ 
+ #endif /* MX6_SABRE_ANDROID_COMMON_H */
+diff --git a/make.sh b/make.sh
+new file mode 100755
+index 0000000000..7da3b4050f
+--- /dev/null
++++ b/make.sh
+@@ -0,0 +1,20 @@
++MY_ANDROID="~/Work/Android/android_build"
++export ARCH=arm
++export CROSS_COMPILE=${MY_ANDROID}/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9/bin/arm-linux-androideabi-
++
++if [ "$#" -lt "1" ];
++then
++	echo "./make.sh mx6dlsabresdandroid_defconfig"
++	exit 1
++fi
++
++if [[ "$#" -eq "2" && "$2" -eq "menuconfig" ]];
++then
++	make $1
++	make $2
++	sed -r '/^#/d' .config > "configs/$1"
++else
++	echo "make..."
++	make $1
++	make -j4
++fi
+-- 
+2.17.1
+

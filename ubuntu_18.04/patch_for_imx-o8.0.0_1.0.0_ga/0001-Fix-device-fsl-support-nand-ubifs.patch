@@ -1,0 +1,161 @@
+From d0dd14d7e7ae4016641710f7f9361b7ef3363909 Mon Sep 17 00:00:00 2001
+From: lovonkey <52697285@qq.com>
+Date: Sat, 23 Feb 2019 14:24:29 +0800
+Subject: [PATCH] Fix: [device fsl] support nand & ubifs
+
+---
+ imx6/BoardConfigCommon.mk        |  4 ++--
+ sabresd_6dq/BoardConfig.mk       | 23 +++++++++++++++--------
+ sabresd_6dq/fstab_nand.freescale | 18 ++++++++++++++++++
+ sabresd_6dq/ubi/ubinize.ini      |  6 +++---
+ 4 files changed, 38 insertions(+), 13 deletions(-)
+ mode change 100644 => 100755 sabresd_6dq/BoardConfig.mk
+ create mode 100644 sabresd_6dq/fstab_nand.freescale
+
+diff --git a/imx6/BoardConfigCommon.mk b/imx6/BoardConfigCommon.mk
+index 63e9b891..91e2aadc 100644
+--- a/imx6/BoardConfigCommon.mk
++++ b/imx6/BoardConfigCommon.mk
+@@ -65,8 +65,8 @@ BOARD_RECOVERYIMAGE_PARTITION_SIZE := 33554432
+ BOARD_SYSTEMIMAGE_PARTITION_SIZE := 1610612736
+ BOARD_CACHEIMAGE_PARTITION_SIZE := 444596224
+ BOARD_VENDORIMAGE_PARTITION_SIZE := 117440512
+-BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE = ext4
+-TARGET_COPY_OUT_VENDOR := vendor
++#BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE = ext4
++#TARGET_COPY_OUT_VENDOR := vendor
+ 
+ BOARD_FLASH_BLOCK_SIZE := 4096
+ TARGET_RECOVERY_UI_LIB := librecovery_ui_imx
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+old mode 100644
+new mode 100755
+index 66cfb219..3d146f38
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -9,9 +9,15 @@ ifeq ($(PREBUILT_FSL_IMX_CODEC),true)
+ endif
+ 
+ # sabresd_6dq default target for EXT4
+-BUILD_TARGET_FS ?= ext4
++BUILD_TARGET_FS ?= ubifs
+ include device/fsl/imx6/imx6_target_fs.mk
+ 
++ifeq ($(BUILD_TARGET_FS),ubifs)
++TARGET_RECOVERY_FSTAB = device/fsl/sabresd_6dq/fstab_nand.freescale
++# build ubifs for nand devices
++PRODUCT_COPY_FILES +=	\
++	device/fsl/sabresd_6dq/fstab_nand.freescale:root/fstab.freescale
++else
+ ifneq ($(BUILD_TARGET_FS),f2fs)
+ # build for ext4
+ ifeq ($(PRODUCT_IMX_CAR),true)
+@@ -29,6 +35,7 @@ TARGET_RECOVERY_FSTAB = device/fsl/sabresd_6dq/fstab-f2fs.freescale
+ PRODUCT_COPY_FILES +=	\
+ 	device/fsl/sabresd_6dq/fstab-f2fs.freescale:root/fstab.freescale
+ endif # BUILD_TARGET_FS
++endif # UBIFS
+ 
+ # Vendor Interface Manifest
+ ifeq ($(PRODUCT_IMX_CAR),true)
+@@ -71,13 +78,13 @@ TARGET_SELECT_KEY := 28
+ # we don't support sparse image.
+ TARGET_USERIMAGES_SPARSE_EXT_DISABLED := false
+ # uncomment below lins if use NAND
+-#TARGET_USERIMAGES_USE_UBIFS = true
++TARGET_USERIMAGES_USE_UBIFS = true
+ 
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ UBI_ROOT_INI := device/fsl/sabresd_6dq/ubi/ubinize.ini
+-TARGET_MKUBIFS_ARGS := -m 4096 -e 516096 -c 4096 -x none
+-TARGET_UBIRAW_ARGS := -m 4096 -p 512KiB $(UBI_ROOT_INI)
++TARGET_MKUBIFS_ARGS := -m 4096 -e 253952 -c 4096 -x none
++TARGET_UBIRAW_ARGS := -m 4096 -p 256KiB $(UBI_ROOT_INI)
+ endif
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+@@ -86,12 +93,12 @@ $(error "TARGET_USERIMAGES_USE_UBIFS and TARGET_USERIMAGES_USE_EXT4 config open
+ endif
+ endif
+ 
+-BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init video=mxcfb0:dev=ldb,fbpix=RGB32,bpp=32 video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off vmalloc=128M androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale cma=448M galcore.contiguousSize=33554432
++BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init video=mxcfb0:dev=ldb,fbpix=RGB32,bpp=32 video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off vmalloc=128M androidboot.console=ttymxc0 androidboot.selinux=permissive consoleblank=0 androidboot.hardware=freescale cma=448M galcore.contiguousSize=33554432
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ #UBI boot command line.
+ # Note: this NAND partition table must align with MFGTool's config.
+-BOARD_KERNEL_CMDLINE +=  mtdparts=gpmi-nand:16m(bootloader),16m(bootimg),128m(recovery),-(root) gpmi_debug_init ubi.mtd=3
++BOARD_KERNEL_CMDLINE += mtdparts=gpmi-nand:48m(loader),16m(boot),16m(recovery),1m(misc),-(rootfs) gpmi_debug_init ubi.mtd=4
+ endif
+ 
+ 
+@@ -113,8 +120,8 @@ IMX_CAMERA_HAL_V3 := true
+ #define consumer IR HAL support
+ IMX6_CONSUMER_IR_HAL := false
+ 
+-TARGET_BOOTLOADER_CONFIG := imx6q:mx6qsabresdandroid_config imx6dl:mx6dlsabresdandroid_config imx6q-ldo:mx6qsabresdandroid_config imx6qp:mx6qpsabresdandroid_config imx6qp-ldo:mx6qpsabresdandroid_config
+-TARGET_BOARD_DTS_CONFIG := imx6q:imx6q-sabresd.dtb imx6dl:imx6dl-sabresd.dtb imx6q-ldo:imx6q-sabresd-ldo.dtb imx6qp:imx6qp-sabresd.dtb imx6qp-ldo:imx6qp-sabresd-ldo.dtb
++TARGET_BOOTLOADER_CONFIG := imx6dl:mx6dlsabresdandroid_config
++TARGET_BOARD_DTS_CONFIG := imx6dl:imx6dl-sabresd.dtb
+ 
+ BOARD_SEPOLICY_DIRS := \
+        device/fsl/imx6/sepolicy \
+diff --git a/sabresd_6dq/fstab_nand.freescale b/sabresd_6dq/fstab_nand.freescale
+new file mode 100644
+index 00000000..f7ab1933
+--- /dev/null
++++ b/sabresd_6dq/fstab_nand.freescale
+@@ -0,0 +1,18 @@
++# Android fstab file.
++#<src>                                                  <mnt_point>         <type>    <mnt_flags>                                                                         <fs_mgr_flags>
++# The filesystem that contains the filesystem checker binary (typically /system) cannot
++# specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
++
++# below is for ubi support, uncomment to support ubifs(NAND)
++
++/devices/soc0/soc/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
++/devices/soc0/soc/2100000.aips-bus/2184200.usb/ci_hdrc.1* auto auto defaults voldmanaged=usb:auto
++/dev/ubi0_0     /system		ubifs 	ro                                      wait
++/dev/ubi0_3     /data           ubifs   nosuid,nodev,nodiratime,noatime         wait
++/dev/ubi0_1     /cache          ubifs   nosuid,nodev                            wait
++/dev/ubi0_2     /device         ubifs   nosuid,nodev                            wait
++misc            /misc           mtd     defaults                                defaults
++bootimg         /boot           mtd     defaults                                defaults
++recovery        /recovery       mtd     defaults                                defaults
++bootloader      /bootloader     mtd     defaults                                defaults
++/dev/block/zram0 none swap defaults zramsize=314572800
+diff --git a/sabresd_6dq/ubi/ubinize.ini b/sabresd_6dq/ubi/ubinize.ini
+index d6832a19..168e1b13 100644
+--- a/sabresd_6dq/ubi/ubinize.ini
++++ b/sabresd_6dq/ubi/ubinize.ini
+@@ -2,7 +2,7 @@
+ mode=ubi
+ image=./out/target/product/sabresd_6dq/system.img
+ vol_id=0
+-vol_size=360MiB
++vol_size=600MiB
+ vol_type=dynamic
+ vol_name=system
+ vol_alignment=1
+@@ -10,7 +10,7 @@ vol_alignment=1
+ [cache]
+ mode=ubi
+ vol_id=1
+-vol_size=180MiB
++vol_size=100MiB
+ vol_type=dynamic
+ vol_name=cache
+ vol_alignment=1
+@@ -26,7 +26,7 @@ vol_aligment=1
+ [data]
+ mode=ubi
+ vol_id=3
+-vol_size=280MiB
++vol_size=150MiB
+ vol_type=dynamic
+ vol_name=data
+ vol_alignment=1
+-- 
+2.17.1
+
