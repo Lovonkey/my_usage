@@ -1,0 +1,51 @@
+From 65b17d161cc07ba01809f10ac9fbdcded1f81b1f Mon Sep 17 00:00:00 2001
+From: lovonkey <52697285@qq.com>
+Date: Sun, 17 Mar 2019 23:01:15 +0800
+Subject: [PATCH] Add: mount system and vendor
+
+---
+ arch/arm/boot/dts/imx6dl-sabresd.dts | 24 +++++++++++++++++++++++-
+ 1 file changed, 23 insertions(+), 1 deletion(-)
+ mode change 100644 => 100755 arch/arm/boot/dts/imx6dl-sabresd.dts
+
+diff --git a/arch/arm/boot/dts/imx6dl-sabresd.dts b/arch/arm/boot/dts/imx6dl-sabresd.dts
+old mode 100644
+new mode 100755
+index 11d8b203f87a..2752b31d102c
+--- a/arch/arm/boot/dts/imx6dl-sabresd.dts
++++ b/arch/arm/boot/dts/imx6dl-sabresd.dts
+@@ -14,8 +14,30 @@
+ / {
+ 	model = "Freescale i.MX6 DualLite SABRE Smart Device Board";
+ 	compatible = "fsl,imx6dl-sabresd", "fsl,imx6dl";
+-};
+ 
++	firmware {
++		android {
++			compatible = "android,firmware";
++			fstab {
++				compatible = "android,fstab";
++				system {
++					compatible = "android,system";
++					dev = "/dev/ubi0_0";
++					type = "ubifs";
++					mnt_flags = "ro";
++					fsmgr_flags = "wait";
++				};
++				vendor {
++					compatible = "android,vendor";
++					dev = "/dev/ubi0_4";
++					type = "ubifs";
++					mnt_flags = "ro";
++					fsmgr_flags = "wait";
++				};
++			};
++		};
++	};
++};
+ 
+ &iomuxc {
+         epdc {
+-- 
+2.17.1
+

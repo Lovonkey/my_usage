@@ -1,0 +1,122 @@
+From 8ee5e6c88f29df951d10082b125d053e9a47faf3 Mon Sep 17 00:00:00 2001
+From: lovonkey <52697285@qq.com>
+Date: Sat, 23 Mar 2019 13:48:25 +0800
+Subject: [PATCH] Fix: build vendor & fix parttion
+
+---
+ imx6/BoardConfigCommon.mk        |  4 ++--
+ sabresd_6dq/BoardConfig.mk       |  9 +++++++--
+ sabresd_6dq/fstab_nand.freescale |  8 +++-----
+ sabresd_6dq/ubi/ubinize.ini      | 15 ++++++++++++---
+ 4 files changed, 24 insertions(+), 12 deletions(-)
+
+diff --git a/imx6/BoardConfigCommon.mk b/imx6/BoardConfigCommon.mk
+index 91e2aadc..ed16ef49 100644
+--- a/imx6/BoardConfigCommon.mk
++++ b/imx6/BoardConfigCommon.mk
+@@ -65,8 +65,8 @@ BOARD_RECOVERYIMAGE_PARTITION_SIZE := 33554432
+ BOARD_SYSTEMIMAGE_PARTITION_SIZE := 1610612736
+ BOARD_CACHEIMAGE_PARTITION_SIZE := 444596224
+ BOARD_VENDORIMAGE_PARTITION_SIZE := 117440512
+-#BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE = ext4
+-#TARGET_COPY_OUT_VENDOR := vendor
++BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE = ubifs
++TARGET_COPY_OUT_VENDOR := vendor
+ 
+ BOARD_FLASH_BLOCK_SIZE := 4096
+ TARGET_RECOVERY_UI_LIB := librecovery_ui_imx
+diff --git a/sabresd_6dq/BoardConfig.mk b/sabresd_6dq/BoardConfig.mk
+index 3d146f38..7ec3c496 100755
+--- a/sabresd_6dq/BoardConfig.mk
++++ b/sabresd_6dq/BoardConfig.mk
+@@ -83,8 +83,11 @@ TARGET_USERIMAGES_USE_UBIFS = true
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ UBI_ROOT_INI := device/fsl/sabresd_6dq/ubi/ubinize.ini
+-TARGET_MKUBIFS_ARGS := -m 4096 -e 253952 -c 4096 -x none
+-TARGET_UBIRAW_ARGS := -m 4096 -p 256KiB $(UBI_ROOT_INI)
++#TARGET_MKUBIFS_ARGS := -m 4096 -e 253952 -c 4096 -x none
++#TARGET_UBIRAW_ARGS := -m 4096 -p 256KiB $(UBI_ROOT_INI)
++
++TARGET_MKUBIFS_ARGS := -m 2048 -e 126976 -c 8192 -x none
++TARGET_UBIRAW_ARGS := -m 2048 -p 128KiB $(UBI_ROOT_INI)
+ endif
+ 
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+@@ -95,6 +98,8 @@ endif
+ 
+ BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init video=mxcfb0:dev=ldb,fbpix=RGB32,bpp=32 video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off vmalloc=128M androidboot.console=ttymxc0 androidboot.selinux=permissive consoleblank=0 androidboot.hardware=freescale cma=448M galcore.contiguousSize=33554432
+ 
++#BOARD_KERNEL_CMDLINE := console=ttymxc0,115200 init=/init video=mxcfb0:dev=ldb,fbpix=RGB32,bpp=32 video=mxcfb1:off video=mxcfb2:off video=mxcfb3:off vmalloc=128M androidboot.console=ttymxc0 consoleblank=0 androidboot.hardware=freescale cma=448M galcore.contiguousSize=33554432
++
+ ifeq ($(TARGET_USERIMAGES_USE_UBIFS),true)
+ #UBI boot command line.
+ # Note: this NAND partition table must align with MFGTool's config.
+diff --git a/sabresd_6dq/fstab_nand.freescale b/sabresd_6dq/fstab_nand.freescale
+index f7ab1933..5f547c7d 100644
+--- a/sabresd_6dq/fstab_nand.freescale
++++ b/sabresd_6dq/fstab_nand.freescale
+@@ -1,5 +1,5 @@
+ # Android fstab file.
+-#<src>                                                  <mnt_point>         <type>    <mnt_flags>                                                                         <fs_mgr_flags>
++#<src> <mnt_point> <type> <mnt_flags> <fs_mgr_flags>
+ # The filesystem that contains the filesystem checker binary (typically /system) cannot
+ # specify MF_CHECK, and must come before any filesystems that do specify MF_CHECK
+ 
+@@ -7,10 +7,8 @@
+ 
+ /devices/soc0/soc/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
+ /devices/soc0/soc/2100000.aips-bus/2184200.usb/ci_hdrc.1* auto auto defaults voldmanaged=usb:auto
+-/dev/ubi0_0     /system		ubifs 	ro                                      wait
+-/dev/ubi0_3     /data           ubifs   nosuid,nodev,nodiratime,noatime         wait
+-/dev/ubi0_1     /cache          ubifs   nosuid,nodev                            wait
+-/dev/ubi0_2     /device         ubifs   nosuid,nodev                            wait
++/dev/ubi0_3     /data           ubifs   nosuid,nodev,nodiratime,noatime		wait
++/dev/ubi0_1     /cache          ubifs   nosuid,nodev				wait
+ misc            /misc           mtd     defaults                                defaults
+ bootimg         /boot           mtd     defaults                                defaults
+ recovery        /recovery       mtd     defaults                                defaults
+diff --git a/sabresd_6dq/ubi/ubinize.ini b/sabresd_6dq/ubi/ubinize.ini
+index 168e1b13..37a1a1cd 100644
+--- a/sabresd_6dq/ubi/ubinize.ini
++++ b/sabresd_6dq/ubi/ubinize.ini
+@@ -2,7 +2,7 @@
+ mode=ubi
+ image=./out/target/product/sabresd_6dq/system.img
+ vol_id=0
+-vol_size=600MiB
++vol_size=680MiB
+ vol_type=dynamic
+ vol_name=system
+ vol_alignment=1
+@@ -10,7 +10,7 @@ vol_alignment=1
+ [cache]
+ mode=ubi
+ vol_id=1
+-vol_size=100MiB
++vol_size=70MiB
+ vol_type=dynamic
+ vol_name=cache
+ vol_alignment=1
+@@ -26,8 +26,17 @@ vol_aligment=1
+ [data]
+ mode=ubi
+ vol_id=3
+-vol_size=150MiB
++vol_size=100MiB
+ vol_type=dynamic
+ vol_name=data
+ vol_alignment=1
++
++[vendor]
++mode=ubi
++image=./out/target/product/sabresd_6dq/vendor.img
++vol_id=4
++vol_size=30MiB
++vol_type=dynamic
++vol_name=vendor
++vol_alignment=1
+ vol_flags=autoresize
+-- 
+2.17.1
+

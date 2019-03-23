@@ -1,0 +1,58 @@
+From 3e969da6b7d562cc6be709ee2d68b1ae357b5bf7 Mon Sep 17 00:00:00 2001
+From: lovonkey <52697285@qq.com>
+Date: Sun, 17 Mar 2019 22:59:31 +0800
+Subject: [PATCH] Fix: support ubifs
+
+---
+ init/init_first_stage.cpp | 28 +++++++++++++++++++++++++++-
+ 1 file changed, 27 insertions(+), 1 deletion(-)
+
+diff --git a/init/init_first_stage.cpp b/init/init_first_stage.cpp
+index d72c3ac4e..f2d34154b 100644
+--- a/init/init_first_stage.cpp
++++ b/init/init_first_stage.cpp
+@@ -203,6 +203,32 @@ bool FirstStageMount::InitRequiredDevices() {
+ }
+ 
+ ListenerAction FirstStageMount::UeventCallback(const Uevent& uevent) {
++
++    LOG(VERBOSE) << "action:" << uevent.action;
++    LOG(VERBOSE) << "path:" << uevent.path;
++    LOG(VERBOSE) << "subsystem:" << uevent.subsystem;
++    LOG(VERBOSE) << "firmware:" << uevent.firmware;
++    LOG(VERBOSE) << "partition_name:" << uevent.partition_name;
++    LOG(VERBOSE) << "device_name:" << uevent.device_name;
++    LOG(VERBOSE) << "major:" << uevent.major;
++    LOG(VERBOSE) << "minor:" << uevent.minor;
++
++    if (uevent.subsystem == "ubi") {
++        if (!uevent.device_name.empty()) {
++            auto iter = required_devices_partition_names_.find(uevent.device_name);
++            if (iter != required_devices_partition_names_.end()) {
++                LOG(INFO) << __PRETTY_FUNCTION__ << ": found partition: " << *iter;
++                required_devices_partition_names_.erase(iter);
++                device_handler_.HandleDeviceEvent(uevent);
++                if (required_devices_partition_names_.empty()) {
++                    return ListenerAction::kStop;
++                } else {
++                    return ListenerAction::kContinue;
++                }
++            }
++        }
++    }
++
+     // Ignores everything that is not a block device.
+     if (uevent.subsystem != "block") {
+         return ListenerAction::kContinue;
+@@ -214,7 +240,7 @@ ListenerAction FirstStageMount::UeventCallback(const Uevent& uevent) {
+         // suffix when A/B is used.
+         auto iter = required_devices_partition_names_.find(uevent.partition_name);
+         if (iter != required_devices_partition_names_.end()) {
+-            LOG(VERBOSE) << __PRETTY_FUNCTION__ << ": found partition: " << *iter;
++            LOG(INFO) << __PRETTY_FUNCTION__ << ": found partition: " << *iter;
+             required_devices_partition_names_.erase(iter);
+             device_handler_.HandleDeviceEvent(uevent);
+             if (required_devices_partition_names_.empty()) {
+-- 
+2.17.1
+
