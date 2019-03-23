@@ -1,0 +1,200 @@
+From aacf54bb0eb00ebc0b20ad404706e0fa29a57fdd Mon Sep 17 00:00:00 2001
+From: lovonkey <52697285@qq.com>
+Date: Sun, 24 Mar 2019 02:56:06 +0800
+Subject: [PATCH] Add: support vendor
+
+---
+ mkfs.ubifs/mkfs.ubifs.c | 166 ++++++++++++++++++++++++----------------
+ 1 file changed, 98 insertions(+), 68 deletions(-)
+
+diff --git a/mkfs.ubifs/mkfs.ubifs.c b/mkfs.ubifs/mkfs.ubifs.c
+index 94de66e..c6f50e2 100755
+--- a/mkfs.ubifs/mkfs.ubifs.c
++++ b/mkfs.ubifs/mkfs.ubifs.c
+@@ -1315,50 +1315,64 @@ static int add_inode(struct stat *st, ino_t inum, int flags)
+ static int add_dir_inode(DIR *dir, ino_t inum, loff_t size, unsigned int nlink,
+ 			 struct stat *st,const char *path_name)
+ {
+-	int fd, flags = 0, con_size;
+-
+-	st->st_size = size;
+-	st->st_nlink = nlink;
+-
+-	if (dir) {
+-		fd = dirfd(dir);
+-		if (fd == -1)
+-			return sys_err_msg("dirfd failed");
+-		if (ioctl(fd, FS_IOC_GETFLAGS, &flags) == -1)
+-			flags = 0;
++    int fd, flags = 0, con_size;
++
++    st->st_size = size;
++    st->st_nlink = nlink;
++
++    if (dir) {
++        fd = dirfd(dir);
++        if (fd == -1)
++            return sys_err_msg("dirfd failed");
++            if (ioctl(fd, FS_IOC_GETFLAGS, &flags) == -1)
++	        flags = 0;
++    }
++    // special case for root inode, no xattr
++    if( inum == UBIFS_ROOT_INO)
++        return add_inode(st, inum, flags);
++
++    if ( context ) {
++        char *sepath = NULL;
++        if (path_name[0] == '/')
++            sepath = strdup(&path_name[strlen(root)]);
++	else {
++	    if (strstr(root, "vendor")) {
++		if (asprintf(&sepath, "/vendor/%s", &path_name[strlen(root)]) < 0) {
++		    printf("%s@%d: root = %s path_name = %s\n", __FUNCTION__, __LINE__, root, path_name);
++                    sepath = NULL;
++		}
++	    } else if (strstr(root, "system")) { 
++		if (asprintf(&sepath, "/system/%s", &path_name[strlen(root)]) < 0) {
++                    printf("%s@%d: root = %s path_name = %s\n", __FUNCTION__, __LINE__, root, path_name); 
++		    sepath = NULL;
++		}
++	    } else {
++                return sys_err_msg("not support");
++	    }
+ 	}
+-   // special case for root inode, no xattr
+-   if( inum == UBIFS_ROOT_INO)
+-	   return add_inode(st, inum, flags);
+-   
+-   if ( context ) {
+-      char *sepath = NULL;
+-      if (path_name[0] == '/')
+-              sepath = strdup(&path_name[strlen(root)]);
+-      else if (asprintf(&sepath, "/system/%s", &path_name[strlen(root)]) < 0)
+-                                       sepath = NULL;
+-
+-      if (!sepath) {
+-         return sys_err_msg("malloc");
+-      }
+-      if (selabel_lookup(sehnd, &secontext,
+-               sepath,
+-               st->st_mode) < 0) {
+-
+-         /* failed to lookup context, assume undefined */
+-         secontext = strdup("system_u:object_r:undefined_t");
+-         printf("missing context: %s\t%s\t%d\n", secontext, sepath,
+-st->st_mode);
+-      }
+-      free(sepath);
+-
+-      con_size = strlen(secontext)+1;
++        
++	if (!strlen(sepath)) {
++	    printf("sepath in empty\n");
++	}
++	if (!sepath) {
++            return sys_err_msg("malloc");
++        }
++
++        if (selabel_lookup(sehnd, &secontext, sepath, st->st_mode) < 0) {
++            /* failed to lookup context, assume undefined */
++	    secontext = strdup("system_u:object_r:undefined_t");
++	    printf("missing context: %s\t%s\t%d\n", secontext, sepath, st->st_mode);
++        }
++    
+ 	printf("the sepath is %s, the  path_name is %s, the secontext is %s \n",sepath,path_name,secontext);
+-   } else {
+-      secontext = NULL;
+-      con_size = 0;
+-   }
+-	return add_inode_with_xattr(st, inum, secontext, con_size, flags);
++        free(sepath);
++        con_size = strlen(secontext)+1;
++    } else {
++        secontext = NULL;
++        con_size = 0;
++    }
++    
++    return add_inode_with_xattr(st, inum, secontext, con_size, flags);
+ }
+ 
+ /**
+@@ -1560,34 +1574,50 @@ static int add_file(const char *path_name, struct stat *st, ino_t inum,
+ 	if (file_size != st->st_size)
+ 		return err_msg("file size changed during writing file '%s'",
+ 			       path_name);
+-   if ( context ) {
+-      char *sepath = NULL;
+-      if (path_name[0] == '/')
+-              sepath = strdup(&path_name[strlen(root)]);
+-      else if (asprintf(&sepath, "/system/%s", &path_name[strlen(root)]) < 0)
+-                                       sepath = NULL;
+-
+-      if (!sepath) {
+-         return sys_err_msg("malloc");
+-      }
++	if ( context ) {
++		char *sepath = NULL;
++		if (path_name[0] == '/')
++			sepath = strdup(&path_name[strlen(root)]);
++		else {
++			if (strstr(root, "vendor")) {
++				if (asprintf(&sepath, "/vendor/%s", &path_name[strlen(root)]) < 0) {
++				printf("%s@%d: root = %s path_name = %s\n", __FUNCTION__, __LINE__, root, path_name);
++				sepath = NULL;
++				}
++			} else if (strstr(root, "system")) { 
++				if (asprintf(&sepath, "/system/%s", &path_name[strlen(root)]) < 0) {
++				printf("%s@%d: root = %s path_name = %s\n", __FUNCTION__, __LINE__, root, path_name); 
++				sepath = NULL;
++				}
++			} else {
++				return sys_err_msg("not support");
++			}
++		}
++        
++		if (!strlen(sepath)) {
++			printf("sepath in empty\n");
++		} 
+ 
+-      if (selabel_lookup(sehnd, &secontext,
+-               sepath,
+-               st->st_mode) < 0) {
++		if (!sepath) {
++			return sys_err_msg("malloc");
++		}
+ 
+-         /* failed to lookup context, assume undefined */
+-         secontext = strdup("system_u:object_r:undefined_t");
+-         printf("missing context: %s\t%s\t%d\n", secontext, sepath,
+-st->st_mode);
+-      }
+-      free(sepath);
+-
+-      con_size = strlen(secontext)+1;
+-printf("the sepath is %s, the  path_name is %s, the secontext is %s \n",sepath,path_name,secontext);
+-   } else {
+-      secontext = NULL;
+-      con_size = 0;
+-   }
++		if (selabel_lookup(sehnd, &secontext, sepath, st->st_mode) < 0) {
++
++			/* failed to lookup context, assume undefined */
++			secontext = strdup("system_u:object_r:undefined_t");
++			printf("missing context: %s\t%s\t%d\n", secontext, sepath, st->st_mode);
++		}
++		
++		printf("the sepath is %s, the  path_name is %s, the secontext is %s \n",sepath,path_name,secontext);
++		free(sepath);
++
++		con_size = strlen(secontext)+1;
++	} else {
++		secontext = NULL;
++		con_size = 0;
++	}
++	
+ 	return add_inode_with_xattr(st, inum, secontext, con_size, flags);
+ }
+ 
+-- 
+2.17.1
+

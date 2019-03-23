@@ -13,3 +13,7 @@ git am 0001-Fix-allow-ubifs.patch
 4.0001-Fix-support-ubifs.patch
 到system/core
 git am 0001-Fix-support-ubifs.patch
+
+5.0001-Add-support-vendor.patch
+到external/mtd-utils
+git am 0001-Add-support-vendor.patch
