@@ -1,0 +1,44 @@
+:::https://blog.csdn.net/wq3028/article/details/79085862
+
+1. apt-get install build-essential libcurl4-openssl-dev libssl-dev
+2. git clone https://github.com/GangZhuo/BaiduPCS.git
+3. ./configure && make
+4. cp baidupcs ~/bin
+
+1.login first as follow:
+    baidupcs login
+2.usage:
+Usage: baidupcs synch [-cdehnru] <local path> <net disk path>
+
+Description:
+ Synch between local and net disk.
+ Default options is '-cdu', means download newer files, upload newer files
+ and print confuse files. You can use '-u' to upload newer files only, use
+ '-d' to download newer files only, and use '-c' to view confuse files.
+ Notes:
+ The confuse items will do nothing,
+   e.g. A side of the target is file and another is directory.
+
+ Options:
+  -c    Print the files that confuse, which is don't know how to do.
+  -d    Synch the new files from the net disk.
+        This option will download the new files from the net disk.
+        You can use 'compare -dr <local dir> <disk dir>' to view
+        how many and which files will download.
+  -e    Print the files that is same between local and net disk.
+  -h    Print the usage.
+  -n    Dry run.
+  -r    Recursive synch the sub directories.
+  -u    Synch the new files to the net disk.
+        This option will upload new files from the net disk.
+        You can use 'compare -ur <local dir> <disk dir>' to view
+	how many and which files will upload.
+         
+  Samples:
+  baidupcs synch -h
+    baidupcs synch ~/music	/music
+    baidupcs synch -d ~/music	/music
+    baidupcs synch -u music	/music
+    baidupcs synch -c music	/music
+    baidupcs synch -cdu music	/music
+    baidupcs synch -r music	/music       
