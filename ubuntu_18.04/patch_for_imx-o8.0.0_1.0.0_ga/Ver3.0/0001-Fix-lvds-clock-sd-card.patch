@@ -1,0 +1,307 @@
+From c450d91a2a6901371de682bcfccf3b6c4e8bed4e Mon Sep 17 00:00:00 2001
+From: lovonkey <52697285@qq.com>
+Date: Wed, 10 Apr 2019 08:42:32 +0800
+Subject: [PATCH] Fix: lvds clock & sd card
+
+---
+ arch/arm/boot/dts/Makefile             | 121 +------------------------
+ arch/arm/boot/dts/imx6dl-sabresd.dts   |   4 +-
+ arch/arm/boot/dts/imx6qdl-sabresd.dtsi |  96 +++++++++-----------
+ 3 files changed, 46 insertions(+), 175 deletions(-)
+
+diff --git a/arch/arm/boot/dts/Makefile b/arch/arm/boot/dts/Makefile
+index 4b689956efed..0d04c310124e 100644
+--- a/arch/arm/boot/dts/Makefile
++++ b/arch/arm/boot/dts/Makefile
+@@ -325,126 +325,7 @@ dtb-$(CONFIG_SOC_IMX53) += \
+ 	imx53-usbarmory.dtb \
+ 	imx53-voipac-bsb.dtb
+ dtb-$(CONFIG_SOC_IMX6Q) += \
+-	imx6dl-apf6dev.dtb \
+-	imx6dl-aristainetos_4.dtb \
+-	imx6dl-aristainetos_7.dtb \
+-	imx6dl-aristainetos2_4.dtb \
+-	imx6dl-aristainetos2_7.dtb \
+-	imx6dl-cubox-i.dtb \
+-	imx6dl-dfi-fs700-m60.dtb \
+-	imx6dl-gw51xx.dtb \
+-	imx6dl-gw52xx.dtb \
+-	imx6dl-gw53xx.dtb \
+-	imx6dl-gw54xx.dtb \
+-	imx6dl-gw551x.dtb \
+-	imx6dl-gw552x.dtb \
+-	imx6dl-gw553x.dtb \
+-	imx6dl-hummingboard.dtb \
+-	imx6dl-nit6xlite.dtb \
+-	imx6dl-nitrogen6x.dtb \
+-	imx6dl-phytec-pbab01.dtb \
+-	imx6dl-rex-basic.dtb \
+-	imx6dl-riotboard.dtb \
+-	imx6dl-sabreauto.dtb \
+-	imx6dl-sabreauto-ecspi.dtb \
+-	imx6dl-sabreauto-enetirq.dtb \
+-	imx6dl-sabreauto-flexcan1.dtb \
+-	imx6dl-sabreauto-gpmi-weim.dtb \
+-	imx6dl-sabrelite.dtb \
+-	imx6dl-sabresd.dtb \
+-	imx6dl-sabresd-btwifi.dtb \
+-	imx6dl-sabresd-hdcp.dtb \
+-	imx6dl-sabresd-ldo.dtb \
+-	imx6dl-ts4900.dtb \
+-	imx6dl-tx6dl-comtft.dtb \
+-	imx6dl-tx6s-8034.dtb \
+-	imx6dl-tx6s-8035.dtb \
+-	imx6dl-tx6u-801x.dtb \
+-	imx6dl-tx6u-8033.dtb \
+-	imx6dl-tx6u-811x.dtb \
+-	imx6dl-tx6u-81xx-mb7.dtb \
+-	imx6dl-udoo.dtb \
+-	imx6dl-sabresd-enetirq.dtb \
+-	imx6dl-wandboard.dtb \
+-	imx6dl-wandboard-revb1.dtb \
+-	imx6dqscm-1gb-qwks-rev2-fix-ldo.dtb \
+-	imx6dqscm-1gb-qwks-rev2-interleave-android-ldo.dtb \
+-	imx6dqscm-1gb-qwks-rev2-wifi-fix-ldo.dtb \
+-	imx6dqscm-1gb-qwks-rev2-hdcp-fix-ldo.dtb \
+-	imx6dqscm-1gb-evb-fix-ldo.dtb \
+-	imx6dqscm-1gb-evb-interleave-android-ldo.dtb \
+-	imx6dqscm-1gb-evb-btwifi-fix-ldo.dtb \
+-	imx6dqscm-1gb-evb-enetirq-fix-ldo.dtb \
+-	imx6dqscm-1gb-evb-hdcp-fix-ldo.dtb \
+-	imx6dqscm-1gb-qwks-rev3-fix-ldo.dtb \
+-	imx6dqscm-1gb-qwks-rev3-hdcp-fix-ldo.dtb \
+-	imx6dqscm-1gb-qwks-rev3-btwifi-fix-ldo.dtb \
+-	imx6q-apalis-ixora.dtb \
+-	imx6q-apf6dev.dtb \
+-	imx6q-arm2.dtb \
+-	imx6q-arm2-hsic.dtb \
+-	imx6q-b450v3.dtb \
+-	imx6q-b650v3.dtb \
+-	imx6q-b850v3.dtb \
+-	imx6q-pop-arm2.dtb \
+-	imx6q-cm-fx6.dtb \
+-	imx6q-cubox-i.dtb \
+-	imx6q-dfi-fs700-m60.dtb \
+-	imx6q-dmo-edmqmx6.dtb \
+-	imx6q-evi.dtb \
+-	imx6q-gk802.dtb \
+-	imx6q-gw51xx.dtb \
+-	imx6q-gw52xx.dtb \
+-	imx6q-gw53xx.dtb \
+-	imx6q-gw5400-a.dtb \
+-	imx6q-gw54xx.dtb \
+-	imx6q-gw551x.dtb \
+-	imx6q-gw552x.dtb \
+-	imx6q-gw553x.dtb \
+-	imx6q-h100.dtb \
+-	imx6q-hummingboard.dtb \
+-	imx6q-icore-rqs.dtb \
+-	imx6q-marsboard.dtb \
+-	imx6q-nitrogen6x.dtb \
+-	imx6q-nitrogen6_max.dtb \
+-	imx6q-novena.dtb \
+-	imx6q-phytec-pbab01.dtb \
+-	imx6q-rex-pro.dtb \
+-	imx6q-sabreauto.dtb \
+-	imx6q-sabreauto-ecspi.dtb \
+-	imx6q-sabreauto-enetirq.dtb \
+-	imx6q-sabreauto-flexcan1.dtb \
+-	imx6q-sabreauto-gpmi-weim.dtb \
+-	imx6q-sabrelite.dtb \
+-	imx6q-sabresd.dtb \
+-	imx6q-sabresd-btwifi.dtb \
+-	imx6q-sabresd-hdcp.dtb \
+-	imx6q-sabresd-ldo.dtb \
+-	imx6q-sabresd-enetirq.dtb \
+-	imx6q-sbc6x.dtb \
+-	imx6q-tbs2910.dtb \
+-	imx6q-ts4900.dtb \
+-	imx6q-tx6q-1010.dtb \
+-	imx6q-tx6q-1010-comtft.dtb \
+-	imx6q-tx6q-1020.dtb \
+-	imx6q-tx6q-1020-comtft.dtb \
+-	imx6q-tx6q-1036.dtb \
+-	imx6q-tx6q-1110.dtb \
+-	imx6q-tx6q-11x0-mb7.dtb \
+-	imx6q-udoo.dtb \
+-	imx6q-utilite-pro.dtb \
+-	imx6q-wandboard.dtb \
+-	imx6q-wandboard-revb1.dtb \
+-	imx6qp-nitrogen6_max.dtb \
+-	imx6qp-sabreauto.dtb \
+-	imx6qp-sabreauto-ecspi.dtb \
+-	imx6qp-sabreauto-flexcan1.dtb \
+-	imx6qp-sabreauto-gpmi-weim.dtb \
+-	imx6qp-sabresd-btwifi.dtb \
+-	imx6qp-sabresd-hdcp.dtb \
+-	imx6qp-sabresd-ldo.dtb \
+-	imx6qp-sabresd-ldo-pcie-cert.dtb \
+-	imx6qp-sabresd.dtb
++	imx6dl-sabresd.dtb
+ dtb-$(CONFIG_SOC_IMX6SL) += \
+ 	imx6sl-evk.dtb \
+ 	imx6sl-evk-ldo.dtb \
+diff --git a/arch/arm/boot/dts/imx6dl-sabresd.dts b/arch/arm/boot/dts/imx6dl-sabresd.dts
+index 2752b31d102c..51c72f718c6b 100755
+--- a/arch/arm/boot/dts/imx6dl-sabresd.dts
++++ b/arch/arm/boot/dts/imx6dl-sabresd.dts
+@@ -86,6 +86,6 @@
+ 	status = "okay";
+ };
+ 
+-&pxp {
+-	status = "okay";
++&crypto {
++        status = "disabled";
+ };
+diff --git a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+index 656e99db686a..3f0f8691a18d 100755
+--- a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+@@ -179,15 +179,6 @@
+ 	status = "disabled";
+ };
+ 
+-&fec {
+-	pinctrl-names = "default";
+-	pinctrl-0 = <&pinctrl_enet>;
+-	phy-mode = "rgmii";
+-	phy-reset-gpios = <&gpio1 25 0>;
+-	fsl,magic-packet;
+-	status = "okay";
+-};
+-
+ &gpc {
+ 	fsl,ldo-bypass = <1>;
+ };
+@@ -377,32 +368,6 @@
+ 			>;
+ 		};
+ 
+-		pinctrl_enet: enetgrp {
+-			fsl,pins = <
+-				MX6QDL_PAD_ENET_MDIO__ENET_MDIO		0x1b0b0
+-				MX6QDL_PAD_ENET_MDC__ENET_MDC		0x1b0b0
+-				MX6QDL_PAD_RGMII_TXC__RGMII_TXC		0x1b030
+-				MX6QDL_PAD_RGMII_TD0__RGMII_TD0		0x1b030
+-				MX6QDL_PAD_RGMII_TD1__RGMII_TD1		0x1b030
+-				MX6QDL_PAD_RGMII_TD2__RGMII_TD2		0x1b030
+-				MX6QDL_PAD_RGMII_TD3__RGMII_TD3		0x1b030
+-				MX6QDL_PAD_RGMII_TX_CTL__RGMII_TX_CTL	0x1b030
+-				MX6QDL_PAD_ENET_REF_CLK__ENET_TX_CLK	0x1b0b0
+-				MX6QDL_PAD_RGMII_RXC__RGMII_RXC		0x1b030
+-				MX6QDL_PAD_RGMII_RD0__RGMII_RD0		0x1b030
+-				MX6QDL_PAD_RGMII_RD1__RGMII_RD1		0x1b030
+-				MX6QDL_PAD_RGMII_RD2__RGMII_RD2		0x1b030
+-				MX6QDL_PAD_RGMII_RD3__RGMII_RD3		0x1b030
+-				MX6QDL_PAD_RGMII_RX_CTL__RGMII_RX_CTL	0x1b030
+-				MX6QDL_PAD_GPIO_16__ENET_REF_CLK	0x4001b0a8
+-			>;
+-		};
+-
+-		pinctrl_enet_irq: enetirqgrp {
+-			fsl,pins = <
+-				MX6QDL_PAD_GPIO_6__ENET_IRQ		0x000b1
+-			>;
+-		};
+ 
+ 		pinctrl_gpio_keys: gpio_keysgrp {
+ 			fsl,pins = <
+@@ -505,7 +470,20 @@
+ 				MX6QDL_PAD_SD1_DAT0__GPIO1_IO16            0x80000000
+ 			>;
+ 		};
+-
++		
++		pinctrl_usdhc2: usdhc2grp {
++			fsl,pins = <
++				MX6QDL_PAD_SD2_CMD__SD2_CMD             0x17059
++				MX6QDL_PAD_SD2_CLK__SD2_CLK             0x10059
++				MX6QDL_PAD_SD2_DAT0__SD2_DATA0          0x17059
++				MX6QDL_PAD_SD2_DAT1__SD2_DATA1          0x17059
++				MX6QDL_PAD_SD2_DAT2__SD2_DATA2          0x17059
++				MX6QDL_PAD_SD2_DAT3__SD2_DATA3          0x17059
++				MX6QDL_PAD_SD3_DAT7__GPIO6_IO17		0x80000000	/* wp */
++				MX6QDL_PAD_SD3_DAT6__GPIO6_IO18		0x80000000	/* cd */
++			>;
++		};
++		
+ 		pinctrl_pcie: pciegrp {
+ 			fsl,pins = <
+ 				MX6QDL_PAD_GPIO_17__GPIO7_IO12	0x1b0b0
+@@ -573,6 +551,7 @@
+ 
+ &ldb {
+ 	status = "okay";
++	split-mode;
+ 
+ 	lvds-channel@0 {
+ 		fsl,data-mapping = "spwg";
+@@ -582,15 +561,15 @@
+ 		display-timings {
+ 			native-mode = <&timing0>;
+ 			timing0: hsd100pxn1 {
+-				clock-frequency = <65000000>;
+-				hactive = <1024>;
+-				vactive = <768>;
+-				hback-porch = <220>;
++				clock-frequency = <138400000>;
++				hactive = <1920>;
++				vactive = <560>;
++				hback-porch = <100>;
+ 				hfront-porch = <40>;
+-				vback-porch = <21>;
+-				vfront-porch = <7>;
+-				hsync-len = <60>;
+-				vsync-len = <10>;
++				vback-porch = <520>;
++				vfront-porch = <3>;
++				hsync-len = <10>;
++				vsync-len = <2>;
+ 			};
+ 		};
+ 	};
+@@ -604,15 +583,15 @@
+ 		display-timings {
+ 			native-mode = <&timing1>;
+ 			timing1: hsd100pxn1 {
+-				clock-frequency = <65000000>;
+-				hactive = <1024>;
+-				vactive = <768>;
+-				hback-porch = <220>;
++				clock-frequency = <138400000>;
++				hactive = <1920>;
++				vactive = <560>;
++				hback-porch = <100>;
+ 				hfront-porch = <40>;
+-				vback-porch = <21>;
+-				vfront-porch = <7>;
+-				hsync-len = <60>;
+-				vsync-len = <10>;
++				vback-porch = <520>;
++				vfront-porch = <3>;
++				hsync-len = <10>;
++				vsync-len = <2>;
+ 			};
+ 		};
+ 	};
+@@ -701,4 +680,15 @@
+ 	pinctrl-0 = <&pinctrl_gpmi_nand>;
+ 	status = "okay";	/* pin conflict with uart3 */
+ 	nand-on-flash-bbt;
+-};  
++};
++
++&usdhc2 {
++	pinctrl-names = "default";
++	pinctrl-0 = <&pinctrl_usdhc2>;
++	bus-width = <4>;
++	cd-gpios = <&gpio6 18 GPIO_ACTIVE_LOW>;
++	wp-gpios = <&gpio6 17 GPIO_ACTIVE_HIGH>;
++	no-1-8-v;
++	keep-power-in-suspend;
++	status = "okay";
++};
+-- 
+2.17.1
+

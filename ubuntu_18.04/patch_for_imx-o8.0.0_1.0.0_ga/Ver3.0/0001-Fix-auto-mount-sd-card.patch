@@ -1,0 +1,72 @@
+From 023a37f82e49acdb4f87bb7ff5fe7ffa6e7779e2 Mon Sep 17 00:00:00 2001
+From: lovonkey <52697285@qq.com>
+Date: Wed, 10 Apr 2019 08:44:47 +0800
+Subject: [PATCH] Fix: auto mount sd card
+
+---
+ sabresd_6dq/fstab_nand.freescale   | 2 +-
+ sabresd_6dq/init.freescale.emmc.rc | 6 +++---
+ sabresd_6dq/init.freescale.sd.rc   | 6 +++---
+ sabresd_6dq/ueventd.freescale.rc   | 3 +--
+ 4 files changed, 8 insertions(+), 9 deletions(-)
+
+diff --git a/sabresd_6dq/fstab_nand.freescale b/sabresd_6dq/fstab_nand.freescale
+index 5f547c7d..a9d4271f 100644
+--- a/sabresd_6dq/fstab_nand.freescale
++++ b/sabresd_6dq/fstab_nand.freescale
+@@ -5,7 +5,7 @@
+ 
+ # below is for ubi support, uncomment to support ubifs(NAND)
+ 
+-/devices/soc0/soc/2100000.aips-bus/2190000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
++/devices/soc0/soc/2100000.aips-bus/2194000.usdhc/mmc_host* auto auto defaults voldmanaged=sdcard:auto,encryptable=userdata
+ /devices/soc0/soc/2100000.aips-bus/2184200.usb/ci_hdrc.1* auto auto defaults voldmanaged=usb:auto
+ /dev/ubi0_3     /data           ubifs   nosuid,nodev,nodiratime,noatime		wait
+ /dev/ubi0_1     /cache          ubifs   nosuid,nodev				wait
+diff --git a/sabresd_6dq/init.freescale.emmc.rc b/sabresd_6dq/init.freescale.emmc.rc
+index 9cb2c512..4cd10250 100644
+--- a/sabresd_6dq/init.freescale.emmc.rc
++++ b/sabresd_6dq/init.freescale.emmc.rc
+@@ -1,10 +1,10 @@
+ on init
+     # link emmc node to /dev/block/by-name
+-    symlink   /dev/block/platform/soc0/soc/2100000.aips-bus/219c000.usdhc/by-name /dev/block/by-name
+-    symlink   /dev/block/platform/soc0/soc/2100000.aips-bus/219c000.usdhc/mmcblk3boot0 /dev/block/by-name/bootloader
++    # symlink   /dev/block/platform/soc0/soc/2100000.aips-bus/219c000.usdhc/by-name /dev/block/by-name
++    # symlink   /dev/block/platform/soc0/soc/2100000.aips-bus/219c000.usdhc/mmcblk3boot0 /dev/block/by-name/bootloader
+ 
+ 
+     # Load persistent dm-verity state
+-	verity_load_state
++    # verity_load_state
+ 
+ 
+diff --git a/sabresd_6dq/init.freescale.sd.rc b/sabresd_6dq/init.freescale.sd.rc
+index 0d236a39..418f3b37 100644
+--- a/sabresd_6dq/init.freescale.sd.rc
++++ b/sabresd_6dq/init.freescale.sd.rc
+@@ -1,7 +1,7 @@
+ on init
+     # link emmc node to /dev/block/by-name
+-    symlink   /dev/block/platform/soc0/soc/2100000.aips-bus/2198000.usdhc/by-name /dev/block/by-name
+-    symlink   /dev/block/platform/soc0/soc/2100000.aips-bus/2198000.usdhc/mmcblk2 /dev/block/by-name/bootloader
++    # symlink   /dev/block/platform/soc0/soc/2100000.aips-bus/2194000.usdhc/by-name /dev/block/by-name
++    # symlink   /dev/block/platform/soc0/soc/2100000.aips-bus/2194000.usdhc/mmcblk2 /dev/block/by-name/bootloader
+ 
+     # Load persistent dm-verity state
+-    verity_load_state
++    # verity_load_state
+diff --git a/sabresd_6dq/ueventd.freescale.rc b/sabresd_6dq/ueventd.freescale.rc
+index 0c8df9dd..22ab1d4c 100644
+--- a/sabresd_6dq/ueventd.freescale.rc
++++ b/sabresd_6dq/ueventd.freescale.rc
+@@ -1,5 +1,4 @@
+-/dev/block/platform/soc0/soc/2100000\.aips-bus/2198000\.usdhc/by-name/presistdata 0600   system     system
+-/dev/block/platform/soc0/soc/2100000\.aips-bus/219c000\.usdhc/by-name/presistdata 0600   system     system
++/dev/block/platform/soc0/soc/2100000\.aips-bus/2194000\.usdhc/by-name/presistdata 0600   system     system
+ /dev/pmem_gpu             0660   system     graphics
+ /dev/ttymxc2              0660   bluetooth  bluetooth
+ /dev/ttymxc4              0660   bluetooth  bluetooth
+-- 
+2.17.1
+
