@@ -1,0 +1,52 @@
+From 97e3cafea2b049d68e4c4f6e19a2a93f28a0270b Mon Sep 17 00:00:00 2001
+From: lovonkey <52697285@qq.com>
+Date: Sun, 17 Mar 2019 17:41:57 +0800
+Subject: [PATCH] Fix: debug function..
+
+1.print log always
+2.change shell root
+---
+ base/logging.cpp | 4 +++-
+ rootdir/init.rc  | 4 ++--
+ 2 files changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/base/logging.cpp b/base/logging.cpp
+index 6357b4ba7..048bee478 100644
+--- a/base/logging.cpp
++++ b/base/logging.cpp
+@@ -163,7 +163,8 @@ void KernelLogger(android::base::LogId, android::base::LogSeverity severity,
+   static_assert(arraysize(kLogSeverityToKernelLogLevel) == android::base::FATAL + 1,
+                 "Mismatch in size of kLogSeverityToKernelLogLevel and values in LogSeverity");
+ 
+-  static int klog_fd = TEMP_FAILURE_RETRY(open("/dev/kmsg", O_WRONLY | O_CLOEXEC));
++  int klog_fd = -1;
++  klog_fd = TEMP_FAILURE_RETRY(open("/dev/kmsg", O_WRONLY | O_CLOEXEC));
+   if (klog_fd == -1) return;
+ 
+   int level = kLogSeverityToKernelLogLevel[severity];
+@@ -182,6 +183,7 @@ void KernelLogger(android::base::LogId, android::base::LogSeverity severity,
+   iov[0].iov_base = buf;
+   iov[0].iov_len = size;
+   TEMP_FAILURE_RETRY(writev(klog_fd, iov, 1));
++  TEMP_FAILURE_RETRY(close(klog_fd));
+ }
+ #endif
+ 
+diff --git a/rootdir/init.rc b/rootdir/init.rc
+index fd2c8389c..66a9e1e2d 100644
+--- a/rootdir/init.rc
++++ b/rootdir/init.rc
+@@ -713,8 +713,8 @@ service console /system/bin/sh
+     class core
+     console
+     disabled
+-    user shell
+-    group shell log readproc
++    user root
++    group root log readproc
+     seclabel u:r:shell:s0
+ 
+ on property:ro.debuggable=1
+-- 
+2.17.1
+
