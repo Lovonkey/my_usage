@@ -1,0 +1,81 @@
+From b1c42a8c29996720a92b4108c7dd04a42abd8d01 Mon Sep 17 00:00:00 2001
+From: lovonkey <52697285@qq.com>
+Date: Sat, 13 Apr 2019 16:12:48 +0800
+Subject: [PATCH] Add: Screen parameter for shanghai
+
+---
+ arch/arm/boot/dts/imx6qdl-sabresd.dtsi | 51 ++++++++++++++++++++++++++
+ 1 file changed, 51 insertions(+)
+
+diff --git a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+index 3f0f8691a18d..fac4ce3bbff5 100755
+--- a/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
++++ b/arch/arm/boot/dts/imx6qdl-sabresd.dtsi
+@@ -549,6 +549,8 @@
+ 	};
+ };
+ 
++/* for beijing */
++#if 0
+ &ldb {
+ 	status = "okay";
+ 	split-mode;
+@@ -596,6 +598,55 @@
+ 		};
+ 	};
+ };
++#else /* for shanghai */
++&ldb {
++	status = "okay";
++	split-mode;
++
++	lvds-channel@0 {
++		fsl,data-mapping = "spwg";
++		fsl,data-width = <18>;
++		status = "okay";
++
++		display-timings {
++			native-mode = <&timing0>;
++			timing0: hsd100pxn1 {
++				clock-frequency = <148500000>;
++				hactive = <1920>;
++				vactive = <1080>;
++				hback-porch = <100>;
++				hfront-porch = <60>;
++				vback-porch = <20>;
++				vfront-porch = <20>;
++				hsync-len = <120>;
++				vsync-len = <5>;
++			};
++		};
++	};
++
++	lvds-channel@1 {
++		fsl,data-mapping = "spwg";
++		fsl,data-width = <18>;
++		primary;
++		status = "okay";
++
++		display-timings {
++			native-mode = <&timing1>;
++			timing1: hsd100pxn1 {
++				clock-frequency = <148500000>;
++				hactive = <1920>;
++				vactive = <1080>;
++				hback-porch = <100>;
++				hfront-porch = <60>;
++				vback-porch = <20>;
++				vfront-porch = <20>;
++				hsync-len = <120>;
++				vsync-len = <5>;
++			};
++		};
++	};
++}; 
++#endif
+ 
+ &pwm1 {
+ 	pinctrl-names = "default";
+-- 
+2.17.1
+
